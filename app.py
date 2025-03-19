@@ -1,88 +1,61 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pandas as pd
+
+# Import data set
+insurance = pd.read_csv('insurance.csv')
+
+# Unique regions for subplots
+regions = insurance['region'].unique()
+sexes = ['male', 'female']
+
+# Create subplot structure
+fig = make_subplots(
+    rows=1, cols=len(regions), subplot_titles=[f"Region: {region}" for region in regions]
+)
+
+# Define colors for sex
+colors = {'male': 'blue', 'female': 'red'}
+
+# Loop through each region to create a subplot
+for i, region in enumerate(regions):
+    subset = insurance[insurance['region'] == region]
+    
+    for sex in sexes:
+        sex_subset = subset[subset['sex'] == sex]
+        fig.add_trace(
+            go.Scatter(
+                x=sex_subset['age'],
+                y=sex_subset['charges'],
+                mode='markers',
+                marker=dict(color=colors[sex]),
+                name=sex if i == 0 else None,
+                showlegend=i == 0
+            ),
+            row=1, col=i + 1
+        )
+
+# Update figure layout
+fig.update_layout(
+    title="Insurance Charges by Age, Region, and Sex",
+    xaxis_title="Age",
+    yaxis_title="Charges ($)",
+    showlegend=True,
+    height=500
+)
 
 # Create a Dash app
 app = dash.Dash(__name__)
 
-server = app.server
-
-# Initial dataset
-datasets = {
-    "dataset1": {'categories': ['A', 'B', 'C', 'D'], 'values': [10, 15, 7, 12]},
-    "dataset2": {'categories': ['A', 'B', 'C', 'D'], 'values': [5, 10, 15, 20]}
-}
-
-# Define the app layout
+# Define the layout of the Dash app
 app.layout = html.Div([
-    html.H1("Interactive Line & Pie Charts"),
-    
-    # Dropdown for dataset selection
-    dcc.Dropdown(
-        id='data-selector',
-        options=[
-            {'label': 'Dataset 1', 'value': 'dataset1'},
-            {'label': 'Dataset 2', 'value': 'dataset2'}
-        ],
-        value='dataset1',
-        clearable=False
-    ),
-    
-    # Sliders for dynamic value adjustments
-    html.Div([
-        html.Label("Adjust A"),
-        dcc.Slider(id='slider-A', min=0, max=30, step=1, value=10, marks={i: str(i) for i in range(0, 31, 5)}),
-        
-        html.Label("Adjust B"),
-        dcc.Slider(id='slider-B', min=0, max=30, step=1, value=15, marks={i: str(i) for i in range(0, 31, 5)}),
-
-        html.Label("Adjust C"),
-        dcc.Slider(id='slider-C', min=0, max=30, step=1, value=7, marks={i: str(i) for i in range(0, 31, 5)}),
-
-        html.Label("Adjust D"),
-        dcc.Slider(id='slider-D', min=0, max=30, step=1, value=12, marks={i: str(i) for i in range(0, 31, 5)}),
-    ]),
-
-    # Graphs for line and pie charts
-    html.Div([
-        dcc.Graph(id='line-chart', style={'width': '48%', 'display': 'inline-block'}),
-        dcc.Graph(id='pie-chart', style={'width': '48%', 'display': 'inline-block'})
-    ])
+    html.H1("Insurance Data Visualization", style={'textAlign': 'center'}),
+    dcc.Graph(id='example-plot', figure=fig)
 ])
-
-# Callback to update both charts based on dropdown and slider values
-@app.callback(
-    [Output('line-chart', 'figure'),
-     Output('pie-chart', 'figure')],
-    [Input('data-selector', 'value'),
-     Input('slider-A', 'value'),
-     Input('slider-B', 'value'),
-     Input('slider-C', 'value'),
-     Input('slider-D', 'value')]
-)
-def update_graphs(selected_dataset, a, b, c, d):
-    """Updates the charts based on selected dataset and slider values."""
-    
-    # Get categories from the selected dataset
-    categories = datasets[selected_dataset]['categories']
-    
-    # Use slider values as updated dataset values
-    values = [a, b, c, d]
-    
-    # Create Line Chart
-    line_fig = go.Figure()
-    line_fig.add_trace(go.Scatter(x=categories, y=values, mode='lines+markers', name=selected_dataset))
-    line_fig.update_layout(title="Line Chart", xaxis_title="Category", yaxis_title="Values")
-
-    # Create Pie Chart
-    pie_fig = go.Figure()
-    pie_fig.add_trace(go.Pie(labels=categories, values=values, name=selected_dataset))
-    pie_fig.update_layout(title="Pie Chart")
-    
-    return line_fig, pie_fig
 
 # Run the app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8090)
