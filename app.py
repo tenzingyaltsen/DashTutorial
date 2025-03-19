@@ -50,6 +50,8 @@ fig.update_layout(
 # Create a Dash app
 app = dash.Dash(__name__)
 
+server = app.server # Required for Render deployment
+
 # Define the layout of the Dash app
 app.layout = html.Div([
     html.H1("Insurance Data Visualization", style={'textAlign': 'center'}),
