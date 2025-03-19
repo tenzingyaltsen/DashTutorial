@@ -3,6 +3,7 @@ dash-core-components
 dash-html-components
 dash_auth
 plotly
+pandas
 gunicorn
 flask
 python-dotenv
